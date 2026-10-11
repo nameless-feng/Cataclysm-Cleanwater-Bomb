@@ -49,6 +49,7 @@ from .parsers.option_slider import parse_option_slider
 from .parsers.oter_vision import parse_oter_vision
 from .parsers.overmap_terrain import parse_overmap_terrain
 from .parsers.palette import parse_palette
+from .parsers.pet_slot import parse_pet_slot
 from .parsers.profession import parse_profession
 from .parsers.proficiency import parse_proficiency
 from .parsers.proficiency_category import parse_proficiency_category
@@ -231,6 +232,7 @@ parsers = {
     "overmap_special_migration": dummy_parser,
     "overmap_terrain": parse_overmap_terrain,
     "palette": parse_palette,
+    "pet_slot": parse_pet_slot,
     "playlist": dummy_parser,
     "pp_generator": dummy_parser,
     "practice": parse_practice,
@@ -263,6 +265,7 @@ parsers = {
     "map_extra_collection": dummy_parser,
     "relic_procgen_data": dummy_parser,
     "requirement": parse_requirement,
+    "riding_config": dummy_parser,
     "rotatable_symbol": dummy_parser,
     "scenario": parse_scenario,
     "scenario_blacklist": dummy_parser,
