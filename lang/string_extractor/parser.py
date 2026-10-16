@@ -50,7 +50,6 @@ from .parsers.pet_slot import parse_pet_slot
 from .parsers.oter_vision import parse_oter_vision
 from .parsers.overmap_terrain import parse_overmap_terrain
 from .parsers.palette import parse_palette
-from .parsers.pet_slot import parse_pet_slot
 from .parsers.profession import parse_profession
 from .parsers.proficiency import parse_proficiency
 from .parsers.proficiency_category import parse_proficiency_category
@@ -234,7 +233,6 @@ parsers = {
     "overmap_special_migration": dummy_parser,
     "overmap_terrain": parse_overmap_terrain,
     "palette": parse_palette,
-    "pet_slot": parse_pet_slot,
     "playlist": dummy_parser,
     "pp_generator": dummy_parser,
     "practice": parse_practice,
