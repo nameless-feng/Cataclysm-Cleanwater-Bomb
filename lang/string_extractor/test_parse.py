@@ -4,27 +4,27 @@ import unittest
 from pathlib import Path
 
 try:
+    from .message import messages
     from .parse import (
         NON_GAME_DATA_DIRECTORIES,
         is_non_game_data_json,
         parse_json_file,
     )
-    from .message import messages
 except ImportError:
     try:
+        from lang.string_extractor.message import messages
         from lang.string_extractor.parse import (
             NON_GAME_DATA_DIRECTORIES,
             is_non_game_data_json,
             parse_json_file,
         )
-        from lang.string_extractor.message import messages
     except ImportError:
+        from string_extractor.message import messages
         from string_extractor.parse import (
             NON_GAME_DATA_DIRECTORIES,
             is_non_game_data_json,
             parse_json_file,
         )
-        from string_extractor.message import messages
 
 
 class JsonFileParsingTest(unittest.TestCase):
@@ -51,15 +51,17 @@ class JsonFileParsingTest(unittest.TestCase):
         self.assertIn(("", "base saddle"), messages)
         self.assertIn(("", "An abstract saddle slot."), messages)
 
-    def test_pet_slot_text_and_riding_config(self):
+    def test_mounted_data_extracts_pet_slot_text(self):
         root = Path(__file__).resolve().parents[2]
-        self.addCleanup(messages.clear)
         messages.clear()
+        self.addCleanup(messages.clear)
+
         parse_json_file(root / "data/json/riding_config.json")
         self.assertFalse(messages)
         parse_json_file(root / "data/json/pet_slots/pet_slots.json")
         self.assertIn(("", "saddle"), messages)
-        self.assertIn(("", "Holds tack used to control and ride a mount."), messages)
+        self.assertIn(("", "Holds tack used to control and ride a mount."),
+                      messages)
 
     def test_schema_file_is_skipped_before_type_dispatch(self):
         with tempfile.TemporaryDirectory() as directory:
