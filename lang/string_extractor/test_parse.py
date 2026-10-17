@@ -28,6 +28,29 @@ except ImportError:
 
 
 class JsonFileParsingTest(unittest.TestCase):
+    def test_abstract_pet_slot_text_is_extracted(self):
+        messages.clear()
+        self.addCleanup(messages.clear)
+        with tempfile.TemporaryDirectory() as directory:
+            game_data = Path(directory) / "pet_slots.json"
+            game_data.write_text(json.dumps([
+                {
+                    "type": "pet_slot",
+                    "abstract": "base_saddle",
+                    "name": {"str": "base saddle"},
+                    "description": "An abstract saddle slot.",
+                },
+                {
+                    "type": "pet_slot",
+                    "id": "custom_saddle",
+                    "copy-from": "base_saddle",
+                },
+            ]), encoding="utf-8")
+            parse_json_file(game_data)
+
+        self.assertIn(("", "base saddle"), messages)
+        self.assertIn(("", "An abstract saddle slot."), messages)
+
     def test_mounted_data_extracts_pet_slot_text(self):
         root = Path(__file__).resolve().parents[2]
         messages.clear()
