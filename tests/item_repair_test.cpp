@@ -16,7 +16,6 @@
 #include "clone_ptr.h"
 #include "coordinates.h"
 #include "fault.h"
-#include "flag.h"
 #include "item.h"
 #include "item_location.h"
 #include "item_repair.h"
@@ -37,6 +36,7 @@
 #include "ret_val.h"
 #include "rng.h"
 #include "type_id.h"
+#include "units.h"
 
 static const activity_id ACT_MEND_ITEM( "ACT_MEND_ITEM" );
 static const activity_id ACT_REPAIR_ITEM( "ACT_REPAIR_ITEM" );
@@ -51,12 +51,15 @@ static const fault_id fault_fail_to_feed( "fault_fail_to_feed" );
 static const fault_id fault_spearhead_bent_socket( "fault_spearhead_bent_socket" );
 static const fault_id fault_spearhead_chipping( "fault_spearhead_chipping" );
 static const fault_id fault_spearhead_warped( "fault_spearhead_warped" );
+static const flag_id json_flag_FILTHY( "FILTHY" );
+static const itype_id itype_esbit_stove( "esbit_stove" );
 static const itype_id itype_glock_19( "glock_19" );
 static const itype_id itype_integrated_welder( "integrated_welder" );
 static const itype_id itype_knife_combat( "knife_combat" );
 static const itype_id itype_magazine_battery_mod( "magazine_battery_mod" );
 static const itype_id itype_mc_steel_chunk( "mc_steel_chunk" );
 static const itype_id itype_metal_honing_rod( "metal_honing_rod" );
+static const itype_id itype_motor( "motor" );
 static const itype_id itype_qt_spear_steel( "qt_spear_steel" );
 static const itype_id itype_small_storage_battery( "small_storage_battery" );
 static const itype_id itype_welding_kit( "welding_kit" );
@@ -387,10 +390,10 @@ TEST_CASE( "motor_repair_material_check_reports_shortages", "[item][repair][repa
             clear_avatar();
             clear_map_without_vision();
             Character &you = get_player_character();
-            item motor( itype_id( "motor" ) );
+            item motor( itype_motor );
             motor.set_damage( 2000 );
             if( filthy_target ) {
-                motor.set_flag( flag_id( "FILTHY" ) );
+                motor.set_flag( json_flag_FILTHY );
             }
             const auto *actor = dynamic_cast<const repair_item_actor *>(
                                     itype_welding_kit->get_use( "repair_metal" )->get_actor_ptr() );
@@ -403,7 +406,7 @@ TEST_CASE( "motor_repair_material_check_reports_shortages", "[item][repair][repa
             for( int index = 0; index < count - shortage; ++index ) {
                 item material( *materials.begin() );
                 if( filthy_material ) {
-                    material.set_flag( flag_id( "FILTHY" ) );
+                    material.set_flag( json_flag_FILTHY );
                 }
                 get_map().add_item_or_charges( you.pos_bub(), material );
             }
@@ -413,13 +416,64 @@ TEST_CASE( "motor_repair_material_check_reports_shortages", "[item][repair][repa
             const bool available = shortage == 0 && ( filthy_target || !filthy_material );
             CHECK( actor->can_repair_target( you, motor, true, true ) == available );
             if( !available ) {
+                const int available_count = filthy_target || !filthy_material ? count - shortage : 0;
+                const std::string expected_counts = "Have: " + std::to_string( available_count ) +
+                                                    ", need: " + std::to_string( count );
                 bool shortage_message = false;
                 for( const auto &message : Messages::recent_messages( 10 ) ) {
-                    shortage_message |= message.second.find( "don't have enough clean" ) != std::string::npos;
+                    shortage_message |= message.second.find( "don't have enough clean" ) != std::string::npos &&
+                                        message.second.find( expected_counts ) != std::string::npos;
                 }
                 CHECK( shortage_message );
             }
             CHECK( motor.damage() == 2000 );
         }
     }
+}
+
+TEST_CASE( "charge_counted_repair_materials_respect_cleanliness",
+           "[item][repair][repair_materials]" )
+{
+    const bool filthy_target = GENERATE( false, true );
+    const bool filthy_material = GENERATE( false, true );
+    const bool sufficient = GENERATE( false, true );
+    CAPTURE( filthy_target, filthy_material, sufficient );
+    clear_avatar();
+    clear_map_without_vision();
+    Character &you = get_player_character();
+    item target( itype_esbit_stove );
+    target.set_damage( 2000 );
+    if( filthy_target ) {
+        target.set_flag( json_flag_FILTHY );
+    }
+    const auto *actor = dynamic_cast<const repair_item_actor *>(
+                            itype_welding_kit->get_use( "repair_metal" )->get_actor_ptr() );
+    REQUIRE( actor );
+    const std::set<itype_id> materials = actor->get_valid_repair_materials( target );
+    REQUIRE( materials.size() == 1 );
+    REQUIRE( item::count_by_charges( *materials.begin() ) );
+    const int count = std::max<int>( 1, std::ceil( target.base_volume() *
+                                     actor->cost_scaling / 250_ml ) );
+    if( sufficient ) {
+        item material( *materials.begin(), calendar::turn, count );
+        if( filthy_material ) {
+            material.set_flag( json_flag_FILTHY );
+        }
+        get_map().add_item_or_charges( you.pos_bub(), material );
+    }
+    you.invalidate_crafting_inventory();
+    CHECK( actor->can_repair_target( you, target, false, false ) );
+    Messages::clear_messages();
+    const bool available = sufficient && ( filthy_target || !filthy_material );
+    CHECK( actor->can_repair_target( you, target, true, true ) == available );
+    if( !available ) {
+        const std::string expected_counts = "Have: 0, need: " + std::to_string( count );
+        bool shortage_message = false;
+        for( const auto &message : Messages::recent_messages( 10 ) ) {
+            shortage_message |= message.second.find( "don't have enough clean" ) != std::string::npos &&
+                                message.second.find( expected_counts ) != std::string::npos;
+        }
+        CHECK( shortage_message );
+    }
+    CHECK( target.damage() == 2000 );
 }

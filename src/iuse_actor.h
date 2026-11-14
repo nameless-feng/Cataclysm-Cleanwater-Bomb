@@ -619,8 +619,8 @@ class salvage_actor : public iuse_actor
         bool confirm_salvage_choices( Character &who, const item &tool,
                                       const std::vector<item_location> &targets, bool bulk,
                                       item_activation_choices &choices ) const;
-        std::optional<int> use_with_choices( Character *who, item &tool, map *here,
-                                             const tripoint_bub_ms &position,
+        std::optional<int> use_with_choices( Character *who, item &cutter, map *here,
+                                             const tripoint_bub_ms &,
                                              const item_activation_choices &choices ) const override;
 
         ~salvage_actor() override = default;

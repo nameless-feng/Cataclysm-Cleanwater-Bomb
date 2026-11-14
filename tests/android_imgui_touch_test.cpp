@@ -3,6 +3,7 @@
 #include "android_imgui_touch.h"
 
 #include <cmath>
+#include <cstdint>
 
 using android_imgui_touch::gesture;
 using android_imgui_touch::gesture_mode;
